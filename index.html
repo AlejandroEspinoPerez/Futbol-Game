@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#8fd3ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golazo Park">
+<meta name="description" content="Golazo Park: fútbol arcade 3D de 1 contra 1 hasta 4 contra 4 en una arena con paredes. Juega contra la PC o con tus amigos en línea desde el navegador, en PC o en el móvil.">
+<title>Golazo Park</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='%23fff' stroke='%231d2340' stroke-width='4'/%3E%3Cpath d='M32 20l9 6.5-3.4 10.5H26.4L23 26.5z' fill='%231d2340'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--a:#2fd27a;--b:#ff4f9a;--ink:#1d2340;--blue:#3a7bff;--orange:#ff7a2f;--panel:rgba(255,255,255,.94)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#8fd3ff;font-family:Fredoka,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
+button{font-family:inherit}
+.screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.screen.on{display:flex}
+.screen.dim{background:rgba(29,35,64,.35);backdrop-filter:blur(3px)}
+.panel{background:var(--panel);border-radius:28px;padding:22px;box-shadow:0 8px 0 rgba(29,35,64,.18),0 24px 60px rgba(29,35,64,.25);max-width:460px;width:100%;max-height:calc(100dvh - 32px);overflow:auto;animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+.panel.wide{max-width:700px}
+.panel h2{margin:0 0 10px;font-size:28px;text-align:center}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.menuWrap{display:flex;align-items:center;gap:40px;width:100%;max-width:1000px;justify-content:space-between}
+.logo{font-weight:700;font-size:clamp(48px,9vw,96px);color:#fff;line-height:.9;text-align:center;transform:rotate(-4deg) skewX(-6deg);text-shadow:0 5px 0 var(--orange),0 10px 0 var(--ink),0 18px 30px rgba(0,0,0,.25);letter-spacing:2px;flex:1}
+.logo small{display:block;font-size:.3em;color:#ffe14d;text-shadow:0 3px 0 var(--ink);letter-spacing:4px;margin-top:10px}
+.btn{display:block;width:100%;border:0;border-radius:18px;padding:13px 18px;margin:9px 0;font-weight:600;font-size:20px;color:#fff;background:var(--blue);box-shadow:0 6px 0 #2453b8;cursor:pointer;transition:transform .08s,filter .15s;position:relative}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #2453b8}
+.btn.green{background:var(--a);box-shadow:0 6px 0 #1c9554}.btn.green:active{box-shadow:0 2px 0 #1c9554}
+.btn.pink{background:var(--b);box-shadow:0 6px 0 #c22d70}.btn.pink:active{box-shadow:0 2px 0 #c22d70}
+.btn.gray{background:#8a93b5;box-shadow:0 6px 0 #5e6687}.btn.gray:active{box-shadow:0 2px 0 #5e6687}
+.btn.yellow{background:#ffc93a;color:var(--ink);box-shadow:0 6px 0 #c9951c}.btn.yellow:active{box-shadow:0 2px 0 #c9951c}
+.btn.orange{background:var(--orange);box-shadow:0 6px 0 #c2541a}.btn.orange:active{box-shadow:0 2px 0 #c2541a}
+.btn.teal{background:#18b6a5;box-shadow:0 6px 0 #0f8478}.btn.teal:active{box-shadow:0 2px 0 #0f8478}
+.btn.purple{background:#7e57c2;box-shadow:0 6px 0 #4d2c91}.btn.purple:active{box-shadow:0 2px 0 #4d2c91}
+.btn.small{display:inline-block;width:auto;padding:8px 14px;font-size:16px;margin:0}
+.btn:disabled{opacity:.5;pointer-events:none}
+.badge{position:absolute;top:-9px;right:-6px;background:#ff4f9a;color:#fff;font-size:12px;border-radius:10px;padding:2px 8px;transform:rotate(6deg);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.mgrid .btn{font-size:17px;padding:12px 8px;margin:6px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{flex:1;min-width:64px;border:3px solid #dfe5f5;background:#fff;border-radius:14px;padding:9px 6px;font-weight:600;font-size:16px;cursor:pointer;color:var(--ink)}
+.chip.sel{border-color:var(--blue);background:#eaf1ff}
+.chip small{display:block;font-size:11px;opacity:.7}
+label.t{display:block;font-weight:600;margin:14px 0 6px;opacity:.7;font-size:13px;text-transform:uppercase;letter-spacing:.8px}
+input.txt{width:100%;border:3px solid #dfe5f5;border-radius:14px;padding:11px 12px;font:600 18px Fredoka,system-ui;color:var(--ink);outline:none}
+input.txt:focus{border-color:var(--blue)}
+.prof{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.lvl{width:54px;height:54px;border-radius:50%;background:#ffc93a;display:grid;place-items:center;font-size:24px;font-weight:700;box-shadow:0 4px 0 #c9951c;flex:none}
+.pinfo{flex:1}.pinfo small{opacity:.6}
+.xpbar{height:12px;border-radius:8px;background:#e5e9f5;overflow:hidden;margin:4px 0 2px}
+.xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3a7bff,#2fd27a);border-radius:8px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.mini{display:flex;justify-content:space-between;align-items:center;font-size:14px;opacity:.75;margin-top:6px}
+.link{background:none;border:0;font-size:22px;cursor:pointer}
+.sw{width:40px;height:40px;border-radius:12px;border:3px solid #fff;box-shadow:0 0 0 2px #dfe5f5;cursor:pointer;position:relative;flex:none}
+.sw.sel{box-shadow:0 0 0 3px var(--blue)}
+.sw.lock,.chip.lock{opacity:.45;cursor:not-allowed}
+.sw.lock::after{content:'🔒';position:absolute;inset:0;display:grid;place-items:center;font-size:14px}
+.optHint{font-size:12px;opacity:.7;margin:4px 2px 0;line-height:1.35}
+#scrCustom{justify-content:flex-end}
+#scrCustom .panel{max-width:420px}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;align-items:center;font-size:13px;margin:8px 0 2px;background:#f5f7fd;border-radius:14px;padding:8px 12px}
+.stats b{font-weight:600;opacity:.75}
+.stats .bar{height:9px;border-radius:6px;background:#e1e6f3;overflow:hidden}
+.stats .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#ffc93a,#ff7a2f)}
+/* pistas */
+.tpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.tcard{position:relative;border:3px solid #dfe5f5;background:#fff;border-radius:14px;padding:6px 4px 5px;font-family:inherit;color:var(--ink);cursor:pointer;text-align:center;line-height:1.15}
+.tcard .tb2{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 2px;border-radius:50%;background:var(--tc);font-size:21px;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.tcard b{display:block;font-size:13px}.tcard small{display:block;font-size:10px;opacity:.65}
+.tcard.sel{border-color:var(--tc);background:#f6f8ff;box-shadow:0 0 0 2px var(--tc)}
+.tcard.off{pointer-events:none}
+.cupList{background:#fff6d6;border-radius:14px;padding:8px 12px;font-size:14px;line-height:1.5}
+/* sala en línea */
+.share{display:flex;gap:8px;align-items:center;margin:6px 0 10px}
+.share input{flex:1;font-size:14px}
+.qrRow{display:flex;gap:12px;align-items:center;background:#f3f6ff;border-radius:16px;padding:8px;margin-bottom:10px}
+#lQr{width:120px;height:120px;flex:none;background:#fff;border-radius:10px;overflow:hidden}
+#lQr svg{width:100%;height:100%;display:block}
+.qrTip{font-size:14px;line-height:1.4}
+.tipSmall{font-size:13px;opacity:.65;text-align:center;margin:6px 0}
+.codeBig{font-size:34px;letter-spacing:6px;color:var(--blue)}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pl{background:#f3f6ff;border-radius:12px;padding:7px 10px;font-weight:600;display:flex;align-items:center;gap:8px;min-height:38px}
+.pl i{width:16px;height:16px;border-radius:5px;flex:none;box-shadow:0 0 0 2px #fff,0 0 0 3px #dfe5f5}
+.pl em{font-style:normal;opacity:.55;font-size:13px}
+.pl.cpu{opacity:.55}
+#lStatus,#jStatus{text-align:center;margin:8px 0;min-height:22px;opacity:.8}
+/* ayuda */
+.help h3{margin:14px 0 6px;font-size:18px}
+.help p,.help li{font-size:15px;line-height:1.45;margin:4px 0}
+.help ul{padding-left:20px;margin:4px 0}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:14px;align-items:center}
+.keys b{background:#eef1fa;border-radius:7px;padding:2px 8px;text-align:center;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:#f5f7fd;border-radius:16px;padding:10px 12px}
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#hud.on{display:block}
+#scoreBox{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(29,35,64,.82);color:#fff;border-radius:20px;padding:6px 10px;box-shadow:0 5px 0 rgba(0,0,0,.18);white-space:nowrap}
+.tm{display:flex;align-items:center;gap:6px;font-weight:600;font-size:15px;min-width:92px}
+.tm i{width:18px;height:18px;border-radius:6px;box-shadow:0 0 0 2px #fff;flex:none}
+#sT1{flex-direction:row-reverse}
+#sScore{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;min-width:74px;text-align:center;line-height:1}
+#sScore.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.4)}}
+#sClock{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);background:#ffc93a;color:var(--ink);border-radius:10px;padding:1px 10px;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:0 3px 0 #c9951c}
+#sClock.gold{background:#ff4f9a;color:#fff;box-shadow:0 3px 0 #c22d70;animation:blink .6s infinite alternate}
+#sClock.low{background:#ff4f4f;color:#fff;box-shadow:0 3px 0 #b22a2a}
+@keyframes blink{to{opacity:.6}}
+#stamBox{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));background:rgba(29,35,64,.7);border-radius:14px;padding:6px 10px;color:#fff;font-size:11px;letter-spacing:1px;font-weight:600}
+#stamBar{width:150px;height:12px;border-radius:7px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:3px}
+#stamBar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#2fd27a,#9be15d);border-radius:7px}
+#stamBar.tired i{background:linear-gradient(90deg,#ff4f4f,#ff7a2f)}
+#powBar{position:absolute;left:0;top:0;width:70px;height:12px;border-radius:7px;background:rgba(29,35,64,.7);border:2px solid #fff;overflow:hidden;display:none;transform:translate(-50%,-50%)}
+#powBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe14d,#ff7a2f,#ff4f4f)}
+#ballArrow{position:absolute;left:0;top:0;width:34px;height:34px;display:none;transform-origin:50% 50%}
+#ballArrow::before{content:'';position:absolute;inset:0;border-radius:50%;background:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+#ballArrow::after{content:'⚽';position:absolute;inset:0;display:grid;place-items:center;font-size:20px}
+#ballArrow b{position:absolute;left:50%;top:-12px;margin-left:-8px;width:0;height:0;border:8px solid transparent;border-bottom:12px solid #fff}
+#mini{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));width:170px;height:110px;border-radius:14px;background:rgba(29,35,64,.4)}
+#banner{position:absolute;top:26%;left:0;right:0;text-align:center;font-size:clamp(46px,9vw,100px);font-weight:700;color:#fff;text-shadow:0 5px 0 var(--ink),0 12px 30px rgba(0,0,0,.3);opacity:0}
+#banner.show{animation:banner 1.6s cubic-bezier(.2,1.4,.4,1) forwards}
+#banner.long{animation-duration:2.6s}
+#banner small{display:block;font-size:.3em;letter-spacing:2px}
+@keyframes banner{0%{opacity:0;transform:scale(.4) rotate(-6deg)}15%{opacity:1;transform:scale(1.1) rotate(-3deg)}25%{transform:scale(1) rotate(-3deg)}80%{opacity:1}100%{opacity:0;transform:scale(1.05) rotate(-3deg) translateY(-20px)}}
+#hint{position:absolute;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 64px);left:50%;transform:translateX(-50%);background:rgba(29,35,64,.75);color:#fff;padding:8px 16px;border-radius:16px;font-size:16px;white-space:nowrap;opacity:0;transition:opacity .25s;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+#hint.on{opacity:1}
+#tutBox{position:absolute;top:calc(max(10px,env(safe-area-inset-top)) + 70px);left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);color:var(--ink);border-radius:18px;padding:10px 18px;box-shadow:0 5px 0 rgba(0,0,0,.15);text-align:center;max-width:min(560px,92vw);display:none}
+#tutBox b{display:block;font-size:19px}
+#tutBox span{font-size:14px;opacity:.8}
+#tutBox.ok{background:#d9ffe8}
+#replayTag{position:absolute;top:calc(max(10px,env(safe-area-inset-top)) + 64px);left:max(16px,env(safe-area-inset-left));background:#ff4f4f;color:#fff;font-weight:700;border-radius:12px;padding:4px 12px;display:none;letter-spacing:1px}
+#replayTag small{display:block;font-size:11px;opacity:.85;letter-spacing:0;font-weight:600}
+.bars::before,.bars::after{content:'';position:fixed;left:0;right:0;height:9vh;background:#000;z-index:3;pointer-events:none}
+.bars::before{top:0}.bars::after{bottom:0}
+#pauseBtn,#fsBtn,#camBtn{position:absolute;top:max(14px,env(safe-area-inset-top));pointer-events:auto;width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.85);font-weight:700;box-shadow:0 4px 0 rgba(0,0,0,.15);cursor:pointer;font-size:20px}
+#pauseBtn{right:14px}#fsBtn{right:68px;font-size:22px}#camBtn{right:122px}
+#ctrlCard{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(max(10px,env(safe-area-inset-top)) + 4px);background:rgba(255,255,255,.9);border-radius:16px;padding:10px 14px;font-size:13px;line-height:1.6;box-shadow:0 4px 0 rgba(0,0,0,.12);transition:opacity .5s}
+#ctrlCard b{display:inline-block;min-width:86px;background:#eef1fa;border-radius:6px;padding:0 6px;margin-right:4px;text-align:center}
+#ctrlCard.hide{opacity:0}
+body.touch #ctrlCard{display:none!important}
+#netInfo{position:absolute;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:rgba(29,35,64,.55);color:#fff;border-radius:12px;padding:4px 10px;font-size:12px;display:none}
+#tags,#pops{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.tag{position:absolute;left:0;top:0;transform-origin:50% 100%;background:rgba(255,255,255,.82);border-radius:8px;padding:0 6px;font-size:12px;line-height:17px;font-weight:600;white-space:nowrap;display:flex;gap:4px;align-items:center;will-change:transform}
+.tag .dot{width:8px;height:8px;border-radius:3px}
+.tag.hum{box-shadow:0 0 0 2px #ffc93a}
+.tag.me{background:#ffc93a}
+.tag.call{background:#ff4f9a;color:#fff;font-size:14px;line-height:20px;padding:0 8px}
+.pop{position:absolute;left:0;top:0;font-weight:700;font-size:26px;color:#fff;text-shadow:0 3px 0 var(--ink);white-space:nowrap;animation:popup 1.2s ease-out forwards}
+.pop.good{color:#9dffc4}.pop.bad{color:#ff8a8a;font-size:22px}.pop.gold{color:#ffe14d;font-size:32px}.pop.blue{color:#7fd6ff}
+@keyframes popup{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-260%) scale(1)}}
+/* táctil */
+#touchUI{position:fixed;inset:0;z-index:12;display:none;pointer-events:none}
+#touchUI.on{display:block}
+#joyZone{position:absolute;left:0;top:25%;bottom:0;width:48%;pointer-events:auto}
+#joy{position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.6);left:max(30px,env(safe-area-inset-left));bottom:max(36px,env(safe-area-inset-bottom))}
+#joyKnob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 4px 0 rgba(0,0,0,.15)}
+#tbtns{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));width:250px;height:230px;pointer-events:none}
+.tb{position:absolute;pointer-events:auto;border:0;border-radius:50%;color:#fff;font-weight:700;font-size:13px;box-shadow:0 5px 0 rgba(0,0,0,.2);opacity:.92;padding:0;touch-action:none}
+.tb:active,.tb.down{transform:translateY(3px) scale(.96);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+#tbShoot{width:104px;height:104px;right:0;bottom:0;background:#ff4f4f;font-size:16px}
+#tbPass{width:82px;height:82px;right:118px;bottom:0;background:var(--blue);font-size:14px}
+#tbSkill{width:78px;height:78px;right:14px;bottom:118px;background:var(--orange)}
+#tbSprint{width:70px;height:70px;right:112px;bottom:96px;background:#2fd27a}
+#tbShoot.charge{box-shadow:0 0 0 5px #ffe14d,0 5px 0 rgba(0,0,0,.2)}
+body.touch #stamBox{left:auto;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 236px);padding:4px 8px}
+body.touch #stamBar{width:110px}
+body.touch #mini{right:auto;left:50%;transform:translateX(-50%);bottom:max(8px,env(safe-area-inset-bottom));width:130px;height:84px;opacity:.8}
+body.touch #hint{bottom:auto;top:calc(max(10px,env(safe-area-inset-top)) + 70px);font-size:14px}
+body:not(.touch) .touchOnly{display:none!important}
+/* clubes */
+.cpick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ccard{border:3px solid #dfe5f5;background:#fff;border-radius:14px;padding:6px 2px 5px;font-family:inherit;color:var(--ink);cursor:pointer;text-align:center;line-height:1.1}
+.ccard .cb{display:grid;place-items:center;width:36px;height:36px;margin:0 auto 2px;border-radius:50%;font-size:19px;box-shadow:0 3px 0 rgba(0,0,0,.15),inset 0 -8px 0 var(--c2)}
+.ccard b{display:block;font-size:12px}.ccard small{display:block;font-size:10px;opacity:.6;letter-spacing:-1px}
+.ccard.sel{border-color:var(--blue);background:#eaf1ff}
+.tpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.tcard{border:3px solid #dfe5f5;background:#fff;border-radius:14px;padding:6px 4px 5px;font-family:inherit;color:var(--ink);cursor:pointer;text-align:center;line-height:1.15}
+.tcard .tb2{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 2px;border-radius:50%;background:var(--tc);font-size:21px;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.tcard b{display:block;font-size:13px}.tcard small{display:block;font-size:10px;opacity:.65}
+.tcard.sel{border-color:var(--tc);background:#f6f8ff;box-shadow:0 0 0 2px var(--tc)}
+/* sala */
+.share{display:flex;gap:8px;align-items:center;margin:6px 0 10px}
+.share input{flex:1;font-size:14px}
+.qrRow{display:flex;gap:12px;align-items:center;background:#f3f6ff;border-radius:16px;padding:8px;margin-bottom:10px}
+#lQr{width:120px;height:120px;flex:none;background:#fff;border-radius:10px;overflow:hidden}
+#lQr svg{width:100%;height:100%;display:block}
+.qrTip{font-size:14px;line-height:1.4}
+.tipSmall{font-size:13px;opacity:.65;text-align:center;margin:6px 0}
+.codeBig{font-size:34px;letter-spacing:6px;color:var(--blue)}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tcol{border-radius:14px;padding:6px;background:#f3f6ff}
+.tcol h4{margin:2px 4px 6px;font-size:14px;display:flex;align-items:center;gap:6px}
+.tcol h4 i{width:14px;height:14px;border-radius:4px}
+.pl{background:#fff;border-radius:10px;padding:6px 8px;font-weight:600;display:flex;align-items:center;gap:6px;min-height:34px;margin-bottom:4px;font-size:14px}
+.pl em{font-style:normal;opacity:.55;font-size:12px}
+.pl.cpu{opacity:.5}
+#lStatus,#jStatus{text-align:center;margin:8px 0;min-height:22px;opacity:.8}
+/* ayuda */
+.help h3{margin:14px 0 6px;font-size:18px}
+.help p,.help li{font-size:15px;line-height:1.45;margin:4px 0}
+.help ul{padding-left:20px;margin:4px 0}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:14px;align-items:center}
+.keys b{background:#eef1fa;border-radius:7px;padding:2px 8px;text-align:center;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:#f5f7fd;border-radius:16px;padding:10px 12px}
+/* retos y logros */
+.goals{background:#f5f7fd;border-radius:16px;padding:8px 12px;margin:6px 0 4px;font-size:13px}
+.goals>b{display:block;font-size:12px;letter-spacing:.8px;opacity:.7;text-transform:uppercase;margin-bottom:2px}
+.goal{display:flex;gap:8px;align-items:center;padding:2px 0}
+.goal .gt{flex:1}
+.goal small{font-weight:700;opacity:.7}
+.goal.done{opacity:.55}.goal.done .gt{text-decoration:line-through}
+.achs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ach{background:#f5f7fd;border-radius:12px;padding:8px 10px;font-size:13px;display:flex;gap:8px;align-items:center}
+.ach span{font-size:24px}.ach b{display:block;font-size:14px}
+.ach.off{opacity:.45;filter:grayscale(1)}
+/* copa */
+.bracket{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.rnd{display:flex;align-items:center;gap:10px;background:#f5f7fd;border-radius:14px;padding:8px 12px;font-weight:600}
+.rnd .rn{width:92px;font-size:12px;opacity:.6;text-transform:uppercase;letter-spacing:.6px}
+.rnd .res{margin-left:auto;font-size:18px}
+.rnd.now{background:#fff6d6;box-shadow:0 0 0 3px #ffc93a}
+.rnd.win .res{color:#1c9554}.rnd.lose .res{color:#c22d70}
+/* final */
+.endTitle{font-size:46px;font-weight:700;text-align:center;margin:0}
+.endScore{text-align:center;font-size:30px;font-weight:700;margin:2px 0}
+.endSub{text-align:center;font-size:15px;opacity:.7;margin:2px 0 8px}
+table.st{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+table.st th{opacity:.6;font-weight:600;font-size:12px;text-transform:uppercase}
+table.st td,table.st th{padding:4px 3px;text-align:center}
+table.st td:first-child,table.st th:first-child{text-align:left}
+table.st tr.me td{background:#fff6d6;font-weight:700}
+table.st td i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.scroll{overflow-x:auto}
+.mvp{text-align:center;background:#fff6d6;border-radius:16px;padding:8px;font-weight:600;margin:8px 0}
+.unlock{background:#eaf1ff;border-radius:12px;padding:8px 12px;margin:6px 0;font-weight:600;animation:pop .4s}
+#toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-140px);background:var(--ink);color:#fff;border-radius:16px;padding:10px 18px;z-index:50;transition:transform .3s;font-weight:600;max-width:90vw;text-align:center}
+#toast.on{transform:translateX(-50%) translateY(0)}
+@media (max-width:760px){
+ #fsBtn{right:14px;top:calc(max(14px,env(safe-area-inset-top)) + 52px);width:40px;height:40px;font-size:18px}
+ #camBtn{right:14px;top:calc(max(14px,env(safe-area-inset-top)) + 100px);width:40px;height:40px;font-size:18px}
+ #pauseBtn{width:40px;height:40px}
+ .menuWrap{flex-direction:column;gap:12px;justify-content:center}
+ .logo{font-size:56px;flex:none}
+ #scrCustom{align-items:flex-end;justify-content:center}
+ #scrCustom .panel{max-height:52dvh}
+ .cols{grid-template-columns:1fr}
+ .tm{min-width:0;font-size:0;gap:0}
+ #sScore{font-size:24px;min-width:62px}
+ .achs{grid-template-columns:1fr}
+}
+@media (max-height:430px){
+ #scoreBox{padding:3px 8px}#sScore{font-size:22px}.tm{font-size:12px;min-width:70px}
+ #fsBtn{right:14px;top:calc(max(10px,env(safe-area-inset-top)) + 50px);width:40px;height:40px;font-size:18px}
+ #camBtn{right:14px;top:calc(max(10px,env(safe-area-inset-top)) + 96px);width:40px;height:40px;font-size:18px}
+ #pauseBtn{width:40px;height:40px;top:max(10px,env(safe-area-inset-top))}
+ #tbtns{transform:scale(.84);transform-origin:100% 100%}
+ #joy{transform:scale(.86);transform-origin:0 100%}
+ body.touch #stamBox{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 196px)}
+ #tutBox{top:calc(max(6px,env(safe-area-inset-top)) + 50px);padding:6px 12px}#tutBox b{font-size:15px}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="tags"></div>
+<div id="pops"></div>
+
+<div id="hud">
+  <div id="scoreBox"><span class="tm" id="sT0"><i></i><b>Local</b></span><b id="sScore">0 - 0</b><span class="tm" id="sT1"><i></i><b>Visita</b></span><small id="sClock">3:00</small></div>
+  <div id="stamBox">SPRINT<div id="stamBar"><i></i></div></div>
+  <div id="powBar"><i></i></div>
+  <div id="ballArrow"><b></b></div>
+  <canvas id="mini" width="340" height="220"></canvas>
+  <div id="tutBox"><b id="tutTitle"></b><span id="tutText"></span></div>
+  <div id="replayTag">⏪ REPETICIÓN<small id="replaySkip">Toca para saltar</small></div>
+  <div id="banner"></div>
+  <div id="hint"></div>
+  <div id="ctrlCard"></div>
+  <div id="netInfo"></div>
+  <button id="camBtn" title="Cámara (C)">🎥</button>
+  <button id="fsBtn" title="Pantalla completa (F)">⛶</button>
+  <button id="pauseBtn" title="Pausa (Esc)">II</button>
+</div>
+
+<div id="touchUI">
+  <div id="joyZone"><div id="joy"><div id="joyKnob"></div></div></div>
+  <div id="tbtns">
+    <button class="tb" id="tbShoot">TIRAR</button>
+    <button class="tb" id="tbPass">PASE</button>
+    <button class="tb" id="tbSkill">REGATE</button>
+    <button class="tb" id="tbSprint">SPRINT</button>
+  </div>
+</div>
+
+<section class="screen on" id="scrMenu">
+  <div class="menuWrap">
+    <div class="logo">GOLAZO<br>PARK<small>FÚTBOL ARCADE</small></div>
+    <div class="panel">
+      <div class="prof">
+        <div class="lvl" id="mLvl">1</div>
+        <div class="pinfo"><b id="mName">Crack</b><div class="xpbar"><i id="mXp"></i></div><small id="mXpTxt"></small></div>
+      </div>
+      <div class="goals" id="mGoals"></div>
+      <button class="btn green" id="bQuick">⚽ Partido contra la PC</button>
+      <div class="mgrid">
+        <button class="btn" id="bHost">🌐 Crear sala</button>
+        <button class="btn pink" data-go="scrJoin">🔗 Unirme</button>
+        <button class="btn orange" id="bCup">🏆 Copa</button>
+        <button class="btn purple" id="bTut">🎓 Entrenar<span class="badge" id="tutBadge">¡Nuevo!</span></button>
+      </div>
+      <div class="mgrid">
+        <button class="btn teal" data-go="scrHelp">📘 Cómo se juega</button>
+        <button class="btn gray" id="bAchs">🏅 Logros</button>
+      </div>
+      <button class="btn yellow" data-go="scrCustom">🎨 Tu jugador</button>
+      <div class="mini"><span id="mStats"></span><span><button class="link" id="bFs" title="Pantalla completa (F)">⛶</button><button class="link" id="bMute" title="Sonido">🔊</button></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen dim" id="scrSetup">
+  <div class="panel wide">
+    <h2 id="sTitle">Partido contra la PC</h2>
+    <label class="t">Tu equipo</label>
+    <div class="cpick" id="sClub"></div>
+    <div id="sRivalWrap">
+      <label class="t">Rival</label>
+      <div class="cpick" id="sRival"></div>
+    </div>
+    <div class="cols">
+      <div>
+        <label class="t">Jugadores por equipo (más el portero)</label>
+        <div class="row" data-opt="size"><button class="chip" data-v="1">1 vs 1</button><button class="chip" data-v="2">2 vs 2</button><button class="chip" data-v="3">3 vs 3</button><button class="chip" data-v="4">4 vs 4</button></div>
+        <label class="t">Duración</label>
+        <div class="row" data-opt="time"><button class="chip" data-v="2">2 min</button><button class="chip" data-v="3">3 min</button><button class="chip" data-v="5">5 min</button></div>
+      </div>
+      <div>
+        <label class="t">Dificultad</label>
+        <div class="row" data-opt="diff"><button class="chip" data-v="0">Fácil</button><button class="chip" data-v="1">Normal</button><button class="chip" data-v="2">Difícil</button></div>
+        <label class="t">Si empatan</label>
+        <div class="row" data-opt="golden"><button class="chip" data-v="1">⭐ Gol de oro</button><button class="chip" data-v="0">Empate</button></div>
+      </div>
+    </div>
+    <label class="t">Estadio</label>
+    <div class="tpick" id="sVenues"></div>
+    <button class="btn green" id="bPlay" style="margin-top:16px">¡A jugar!</button>
+    <button class="btn gray" data-go="scrMenu">Volver</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrCup">
+  <div class="panel">
+    <h2>🏆 Copa Golazo</h2>
+    <p class="tipSmall" id="cupInfo"></p>
+    <div class="bracket" id="cupBracket"></div>
+    <button class="btn green" id="bCupPlay">Jugar</button>
+    <button class="btn orange" id="bCupNew">Nueva copa</button>
+    <button class="btn gray" data-go="scrMenu">Volver</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrHelp">
+  <div class="panel wide help">
+    <h2>📘 Cómo se juega</h2>
+    <p>Controlas a <b>un solo jugador</b> en tercera persona, como en los partidos callejeros: tus compañeros los maneja la PC (o tus amigos en línea) y cada equipo tiene un portero de la PC. La cancha es una <b>arena con paredes</b>: el balón nunca sale, rebota y sigue el juego. No hay faltas ni fuera de juego. Gana quien meta más goles; si empatan, <b>gol de oro</b>.</p>
+    <div class="cols">
+      <div class="box">
+        <h3>💻 En PC</h3>
+        <div class="keys">
+          <b>W A S D / flechas</b><span>Moverte</span>
+          <b>Shift</b><span>Sprint (gasta la barra verde)</span>
+          <b>J · clic izq.</b><span>Tirar (mantén para cargar) · remate de primera</span>
+          <b>K · clic der.</b><span>Pase (mantén = pase elevado) · sin balón: pedirla o entrada</span>
+          <b>L · Espacio</b><span>Con balón: regate · sin balón: barrida</span>
+          <b>E</b><span>¡Pásala! (pedir el balón)</span>
+          <b>C</b><span>Cambiar cámara</span>
+          <b>Esc · F · M</b><span>Pausa · pantalla completa · sonido</span>
+        </div>
+        <p style="font-size:13px;opacity:.7">Con mando: palanca, A = pase, B = tiro, X = regate/barrida, gatillos = sprint, Y = cámara.</p>
+      </div>
+      <div class="box">
+        <h3>📱 En el móvil</h3>
+        <ul>
+          <li><b>Joystick</b> a la izquierda para moverte.</li>
+          <li><b>TIRAR</b> (mantén para cargar), <b>PASE</b> (mantén para elevarlo), <b>REGATE/BARRIDA</b> y <b>SPRINT</b> a la derecha.</li>
+          <li>Sin balón, <b>PASE</b> pide la pelota a tu compañero o hace una entrada si el rival está cerca.</li>
+          <li>Gira el teléfono en horizontal y usa ⛶ para pantalla completa.</li>
+        </ul>
+      </div>
+    </div>
+    <h3>🎯 Tirar y apuntar</h3>
+    <p>El tiro va hacia donde apuntas con el joystick (o las flechas). Un toque corto es un <b>tiro colocado</b> (flojo pero preciso); mantener carga un <b>cañonazo</b> que sube y es menos preciso.</p>
+    <h3>⚡ Remates de primera</h3>
+    <p>Si el balón viene por el aire, pulsa <b>TIRAR</b> justo antes de que llegue: según la altura harás un <b>cabezazo</b>, una <b>volea</b> o, si estás de espaldas al arco, ¡una <b>chilena</b>! Con <b>PASE</b> la devuelves de primera a un compañero.</p>
+    <h3>🛡️ Defender</h3>
+    <p>La <b>barrida</b> llega lejos y tumba al rival, pero si fallas te quedas en el suelo. La <b>entrada</b> (PASE cerca del rival) es más segura. Un <b>regate</b> bien a tiempo esquiva las dos.</p>
+    <h3>🏆 Modos</h3>
+    <p><b>Partido contra la PC</b> de 1 vs 1 hasta 4 vs 4 · <b>Crear sala</b> para jugar con hasta 7 amigos (cada uno en su teléfono o PC; la PC completa los equipos) · <b>Copa</b>: cuartos, semifinal y final · <b>Entrenar</b>: 6 lecciones cortas. Subiendo de nivel desbloqueas peinados, botines, celebraciones, estilos de juego y estelas para el balón. Cada día hay <b>3 retos nuevos</b>.</p>
+    <button class="btn green" data-go="scrMenu">¡Entendido!</button>
+  </div>
+</section>
+
+<section class="screen" id="scrCustom">
+  <div class="panel">
+    <h2>Tu jugador</h2>
+    <label class="t">Nombre</label>
+    <input class="txt" id="cName" maxlength="12" autocomplete="off">
+    <label class="t">Número</label>
+    <input class="txt" id="cNum" type="number" min="1" max="99" inputmode="numeric">
+    <label class="t">Tu club favorito</label>
+    <div class="cpick" id="cClub"></div>
+    <div id="custRows"></div>
+    <button class="btn green" data-go="scrMenu" style="margin-top:16px">Listo</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrAchs">
+  <div class="panel wide">
+    <h2>🏅 Logros</h2>
+    <div class="achs" id="achList"></div>
+    <button class="btn green" data-go="scrMenu" style="margin-top:12px">Volver</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrJoin">
+  <div class="panel">
+    <h2>Unirme a una sala</h2>
+    <label class="t">Código de la sala</label>
+    <input class="txt" id="jCode" maxlength="6" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:28px">
+    <div id="jStatus"></div>
+    <p class="tipSmall">Abre el link en Chrome o Safari (no dentro de WhatsApp o Instagram). No hace falta estar en la misma red.</p>
+    <button class="btn green" id="bJoin">Entrar</button>
+    <button class="btn gray" data-go="scrMenu">Volver</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrLobby">
+  <div class="panel wide">
+    <h2>Sala <span class="codeBig" id="lCode">-----</span></h2>
+    <div class="share"><input class="txt" id="lLink" readonly><button class="btn small" id="bCopy">Copiar link</button></div>
+    <div class="qrRow" id="qrRow"><div id="lQr"></div><div class="qrTip">📱 <b>Escanea este código con la cámara del teléfono</b> para entrar a la sala. Funciona con WiFi o con datos. Hasta 8 jugadores. Deja esta pestaña abierta mientras juegan.</div></div>
+    <div class="teams" id="lTeams"></div>
+    <button class="btn small" id="bSwap" style="margin:8px auto 0;display:block">🔄 Cambiarme de equipo</button>
+    <div id="lHostOpts">
+      <div class="cols">
+        <div>
+          <label class="t">Jugadores por equipo</label>
+          <div class="row" data-lopt="size"><button class="chip" data-v="1">1</button><button class="chip" data-v="2">2</button><button class="chip" data-v="3">3</button><button class="chip" data-v="4">4</button></div>
+          <label class="t">Duración</label>
+          <div class="row" data-lopt="time"><button class="chip" data-v="2">2 min</button><button class="chip" data-v="3">3 min</button><button class="chip" data-v="5">5 min</button></div>
+        </div>
+        <div>
+          <label class="t">Compañeros de la PC</label>
+          <div class="row" data-lopt="diff"><button class="chip" data-v="0">Fácil</button><button class="chip" data-v="1">Normal</button><button class="chip" data-v="2">Difícil</button></div>
+          <label class="t">Si empatan</label>
+          <div class="row" data-lopt="golden"><button class="chip" data-v="1">⭐ Gol de oro</button><button class="chip" data-v="0">Empate</button></div>
+        </div>
+      </div>
+      <label class="t">Estadio</label>
+      <div class="tpick" id="lVenues"></div>
+    </div>
+    <div id="lGuestInfo" class="tipSmall"></div>
+    <div id="lStatus"></div>
+    <button class="btn green" id="bStart">¡Empezar partido!</button>
+    <button class="btn gray" id="bLeave">Salir de la sala</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrPause">
+  <div class="panel">
+    <h2>Pausa</h2>
+    <button class="btn green" id="bResume">Continuar</button>
+    <button class="btn" id="bCam">🎥 Cámara: Equipo</button>
+    <button class="btn" id="bTags">🏷️ Nombres: Auto</button>
+    <button class="btn" id="bQuality">⚙️ Calidad: Automática</button>
+    <button class="btn" id="bReplay">⏪ Repeticiones: Sí</button>
+    <button class="btn" id="bMusic">🎵 Música: Sí</button>
+    <button class="btn" id="bVoice">🎙️ Narrador: Sí</button>
+    <button class="btn touchOnly" id="bSprintMode">🏃 Sprint: Mantener</button>
+    <button class="btn touchOnly" id="bVib">📳 Vibración: Sí</button>
+    <button class="btn orange" id="bRestart">🔄 Reiniciar partido</button>
+    <button class="btn gray" id="bQuit">Salir al menú</button>
+  </div>
+</section>
+
+<section class="screen dim" id="scrEnd">
+  <div class="panel wide">
+    <p class="endTitle" id="eTitle">¡Victoria!</p>
+    <div class="endScore" id="eScore"></div>
+    <div class="endSub" id="eSub"></div>
+    <div class="scroll"><table class="st" id="eTable"></table></div>
+    <div class="mvp" id="eMvp"></div>
+    <div class="prof" style="margin-top:10px">
+      <div class="lvl" id="eLvl">1</div>
+      <div class="pinfo"><b id="eXpGain">+0 XP</b><div class="xpbar"><i id="eXp"></i></div><small id="eXpTxt"></small></div>
+    </div>
+    <div id="eUnlocks"></div>
+    <button class="btn green" id="bAgain">¡Revancha!</button>
+    <button class="btn" id="bToLobby" style="display:none">Volver a la sala</button>
+    <button class="btn gray" id="bEndMenu">Menú</button>
+  </div>
+</section>
+
+<div id="toast"></div>
+<script type="module" src="game.js"></script>
+</body>
+</html>
